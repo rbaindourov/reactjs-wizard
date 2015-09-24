@@ -1,9 +1,28 @@
 // Write your package code here!
 
+Opportunity = new Mongo.Collection('opportunity');
+Opportunity.allow({
+  insert:function(){
+    return true;
+  },
+  update:function(){
+    return true;
+  }
+})
+
+Meteor.methods({
+  updateOpportunity: function( _id, entry ) {
+    console.log('addOpportunity', entry );
+    Opportunity.update( {_id:_id}, {$set:entry}, {upsert:true});
+  }
+});
+
+
 Wizard = React.createClass({
 
   mixins: [ReactMeteorData],
   templateName: "Wizard",
+
 
 
   handleNext: function(){
@@ -11,6 +30,14 @@ Wizard = React.createClass({
       console.log('handleNext', arguments)
       var page = ( parseInt( this.state['page'] )+ 1 );
       var state =  { page:page };
+      var wizard =  this;
+
+      this.data.FormFields.map(function (row) {
+        if( wizard.state['page'] == row.page ){
+          Session.set( row.id, $( '#'+row.id ).val() );
+        }
+      })
+      this.updateMeteorData();
       this.setState( state );
     } catch( e ){
       console.log( 'handleNext', 'error', e );
@@ -18,8 +45,27 @@ Wizard = React.createClass({
   },
 
   handleSubmit: function( e){
-    this.setState({finished:true});
 
+    var userInfo =  Session.get('userInfo') ;
+    console.log('handleSubmit', userInfo)
+    if( userInfo === undefined || userInfo === null ){
+        console.error( this, this.data );
+        throw new Meteor.Error('No User ID, plesase login first.');
+    }
+    this.updateMeteorData();
+
+    this.setState({finished:true});
+  },
+
+  updateMeteorData(){
+    console.log('updateMeteorData')
+    var entry = { }
+    this.data.FormFields.forEach( function(row) {
+      entry[row.id]=Session.get(row.id);
+    })
+
+    var wizard = Session.get('wizard');
+    Meteor.call('updateOpportunity', wizard._id, entry );
 
   },
 
@@ -56,79 +102,23 @@ Wizard = React.createClass({
 
   getInitialState: function(){
     console.log( 'getInitialState', this.props );
+
+    var userInfo = Session.get('userInfo');
+
+    if( userInfo === undefined ){
+      throw new Meteor.Error('No User ID, plesase login first.');
+    }
+
     var startPage = ( this.props['page'] ) ?  this.props['page'] : 1;
+
+    //TODO account for new vs recovery
+    var _id = Opportunity.insert({ product:this.props['name'], userId:userInfo.id})
+    Session.set('wizard', {_id:_id, product:this.props['name'], userId:userInfo.id});
+
     return {
       page: startPage,
       wizard: this.props['name'],
     }
-  },
-
-  renderField: function(model) {
-      console.log('renderField', model );
-      switch( model.type ){
-        case 'Text':
-          return( <input className="form-control" key={model.id} id={model.id} name={model.id} type="text" placeholder={model.label}/> );
-        break;
-
-        case 'Integer':
-          return( <input className="form-control" key={model.id} id={model.id} name={model.id} type="number" placeholder={model.label}/> );
-        break;
-
-        case 'Currency':
-          return( <input className="form-control" key={model.id} id={model.id} name={model.id} type="number" placeholder={model.label}/> );
-        break;
-
-        case 'Date':
-          return(
-            <div key={model.id} className="form-group">
-                <label htmlFor={model.id}> {model.label} </label>
-                <input className="form-control" key={model.id} id={model.id} name={model.id} type="date" placeholder={model.label}/>
-            </div>
-          )
-        break;
-
-        case 'TrueFalse':
-          return(
-            <div key={model.id} className="checkbox">
-              <label htmlFor={model.id}>
-                <input type="checkbox" id={model.id} name={model.id} />{model.label}
-              </label>
-            </div>
-          )
-        break;
-
-        case 'TextArea':
-          return(
-            <div  key={model.id} className="form-group">
-              <label htmlFor={model.id}>{model.label}</label>
-              <textarea className="form-control" id={model.id} name={model.id}></textarea>
-            </div>
-          )
-        break;
-
-
-        case 'List':
-          return(
-
-              <label key={model.id} htmlFor={model.id}>{model.label}
-              <select id={model.id} className="form-control">
-                {model.values.map( (value) => {
-                  return (
-                    <option key={value} value={value}>{value}</option>
-                  )
-                })}
-              </select>
-              </label>
-
-          )
-        break;
-
-
-        default:
-          return(<span key={model.id}> new field </span>)
-
-      }
-
   },
 
   render: function() {
@@ -147,10 +137,11 @@ Wizard = React.createClass({
 
     return (
       <form method="POST" action="/postResult" className="form" onSubmit={this.handleSubmit}>
+
         {this.data.FormFields.map(function (row) {
           if( wizard.state['page'] == row.page )
             return (
-              wizard.renderField( row )
+              <InputField key={row.id} model={row} />
             );
         })}
         <div className="form-group">
