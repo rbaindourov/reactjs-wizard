@@ -1,6 +1,6 @@
 Package.describe({
   name: 'winwinhost:reactjs-wizard',
-  version: '0.0.4',
+  version: '0.0.5',
   summary: 'ReactJS based Wizard component for meteor projects using React and SCSS.',
   git: 'https://github.com/rbaindourov/reactjs-wizard',
   documentation: 'README.md'
