@@ -11,12 +11,36 @@ InputField = React.createClass({
           return( <input className="form-control fade-in" id={model.id} name={model.id} type="text" placeholder={model.label}/> );
         break;
 
+        /*
         case 'Integer':
           return( <input className="form-control fade-in" id={model.id} name={model.id} type="number" placeholder={model.label}/> );
         break;
+        */
+
+
+        case 'Integer':
+          return(
+               <div className="form-row">
+                  <label htmlFor={model.id}> {model.label} </label>
+                  <div className="input-group medium">
+                    <input className="form-control fade-in" id={model.id} name={model.id} type="number" placeholder={model.label}/>
+                    <span className="input-group-addon">pcs</span>
+                  </div>
+                </div>
+            );
+        break;
 
         case 'Currency':
-          return( <input className="form-control fade-in" id={model.id} name={model.id} type="number" placeholder={model.label}/> );
+          return(
+            <div className="form-row">
+              <label htmlFor={model.id}> {model.label} </label>
+              <div className="input-group medium">
+                <span className="input-group-addon">$</span>
+                <input className="form-control currency fade-in" defaultValue="0.00" min="0" step="0.01"
+                  data-number-to-fixed="2" data-number-stepfactor="100" id={model.id}
+                  name={model.id} type="number" placeholder={model.label} />
+              </div>
+            </div>);
         break;
 
         case 'Date':
@@ -49,7 +73,7 @@ InputField = React.createClass({
 
         case 'List':
           return(
-
+            <div className="input-group medium">
               <label htmlFor={model.id} className="fade-in">{model.label}
               <select id={model.id} className="form-control">
                 {model.values.map( (value) => {
@@ -59,6 +83,7 @@ InputField = React.createClass({
                 })}
               </select>
               </label>
+            </div>
           )
         break;
 

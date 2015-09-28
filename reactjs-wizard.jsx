@@ -23,8 +23,6 @@ Wizard = React.createClass({
   mixins: [ReactMeteorData],
   templateName: "Wizard",
 
-
-
   handleNext: function(){
     try{
       console.log('handleNext', arguments)
@@ -52,8 +50,14 @@ Wizard = React.createClass({
         console.error( this, this.data );
         throw new Meteor.Error('No User ID, plesase login first.');
     }
-    this.updateMeteorData();
 
+    this.data.FormFields.map(function (row) {
+      if( wizard.state['page'] == row.page ){
+        Session.set( row.id, $( '#'+row.id ).val() );
+      }
+    })
+    Session.set('completed','true');
+    this.updateMeteorData();
     this.setState({finished:true});
   },
 
